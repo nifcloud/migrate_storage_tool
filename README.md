@@ -29,16 +29,16 @@ S3互換API対応ストレージ間でのデータ移行用ツール
 ```
 # bundle exec ruby copy_storage_to_another.rb
 ```
-    - 移行対象のオブジェクトリスト(listfile)が、並列処理ごとに`./tmp`に出力されます。
+※移行対象のオブジェクトリスト(listfile)が、並列処理ごとに`./tmp`に出力されます。
 
 
 ## 再開
 * 再開コマンド
+    - 指定されたlistfileの先頭から移行を再開します。
+    - 実施済みのオブジェクトを消すなど、適宜listfileを編集してから使用してください。
 ```
 # bundle exec ruby continue_storage_to_another_from_file.rb <listfile>
 ```
-    - 指定されたlistfileの先頭から移行を再開します。
-    - 実施済みのオブジェクトを消すなど、適宜listfileを編集してから使用してください。
 
 ## 補足
 * ACLは以下のものだけ対応しています。(ニフクラコンパネのエクスプローラから設定できるものだけ)
