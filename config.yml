@@ -1,7 +1,10 @@
 ---
+multiple:
+   cpu_number: 1
+   thread_number: 3
 src:
    endpoint: jp-east-2.os.cloud.nifty.com
-   bucketname: 
+   bucketname:
    access_key:
    secret_key:
    headers:
