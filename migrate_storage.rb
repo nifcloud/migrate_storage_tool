@@ -31,6 +31,7 @@ class MigrateStorage
         @retry_max = 10 #times
         @sleep_time = 3 #sec
         @move_headers = config["src"]["headers"]
+        @multiple_numbers = config["multiple"]["numbers"]
 
     end
    
@@ -40,7 +41,7 @@ class MigrateStorage
         @logger.info " Object list size:#{object_list.size}"
         @logger.info "Gettign list finished"
         @logger.info "Migrate data start"
-        parallel_process_migrate(object_list.shuffle!, 1)
+        parallel_process_migrate(object_list.shuffle!, @multiple_numbers)
         @logger.info "Migrate data finished"
         exit 0
     end

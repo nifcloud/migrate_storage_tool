@@ -1,4 +1,6 @@
 ---
+multiple:
+   numbers: 1
 src:
    endpoint: jp-east-2.os.cloud.nifty.com
    bucketname: 
