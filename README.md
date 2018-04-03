@@ -20,7 +20,7 @@ S3互換API対応ストレージ間でのデータ移行用ツール
 ```
 
 ## 設定ファイル
-* config.ymlがあるので、それぞれ ( `cpu_number:` `thread_number:` ) `endpoint:` `bucketname:` `access_key:` `secret_key:` を設定してください。
+* config.ymlがあるので、それぞれ `cpu_number:` `thread_number:` `endpoint:` `bucketname:` `access_key:` `secret_key:` を設定してください。
     - multiple: 多重数(デフォルトはcpu数が1、スレッド数が3)
     - src: 移行元情報 
     - dst: 移行先情報
