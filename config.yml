@@ -8,8 +8,8 @@ src:
    access_key:
    secret_key:
    headers:
-      - cache-control: :cache_control
-      - content-type: :content_type
+      - cache-control: cache_control
+      - content-type: content_type
 dst:
    endpoint: jp-west-1.os.cloud.nifty.com
    bucketname:
