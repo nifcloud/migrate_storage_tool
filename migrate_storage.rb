@@ -33,6 +33,7 @@ class MigrateStorage
         @move_headers = config["src"]["headers"]
         @cpu_numbers = config["multiple"]["cpu_number"]
         @thread_numbers = config["multiple"]["thread_number"]
+        @gc_execution_interval = config["memory"]["gc_execution_interval"]
 
     end
    
@@ -203,7 +204,7 @@ private
         begin 
            Parallel.each(object_list.each_slice(set_array_slice_num(object_list, parallel_num)), in_processes: parallel_num) do |slice_list|
               thread_id = create_thread_id 6
-              parallel_thread_migrate(slice_list , thread_id , 1)
+              parallel_thread_migrate(slice_list , thread_id , @thread_numbers)
            end
         rescue => ex
            @logger.error "Get Error in Parallel process #{ex.message}"
@@ -222,7 +223,7 @@ private
               obj_cnt += 1
               dst_obj = nil
               src_obj = nil
-              GC.start if (obj_cnt % 100 == 0)
+              GC.start if (obj_cnt % @gc_execution_interval == 0)
            end
         rescue Parallel::DeadWorker => ex
            @logger.info "Get Error #{ex.message}"
