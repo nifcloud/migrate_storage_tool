@@ -5,15 +5,15 @@ multiple:
 memory:
   gc_execution_interval: 100
 src:
-   endpoint: jp-east-2.os.cloud.nifty.com
-   bucketname:
-   access_key:
-   secret_key:
+   endpoint: ncss.nifty.com
+   bucketname: zyp08161
+   access_key: 6MGHFGKBAZ6J6WIQIJQF
+   secret_key: a9ig3RwM69jHpC90J6I11YADWPzdb1p97pEiUcza
    headers:
       - cache-control: :cache_control
       - content-type: :content_type
 dst:
-   endpoint: jp-west-1.os.cloud.nifty.com
-   bucketname:
-   access_key:
-   secret_key:
+   endpoint: jp-east-2.os.cloud.nifty.com
+   bucketname: zyp08161
+   access_key: 6MGHFGKBAZ6J6WIQIJQF
+   secret_key: a9ig3RwM69jHpC90J6I11YADWPzdb1p97pEiUcza

@@ -179,8 +179,9 @@ private
        begin
           @move_headers.each do |header,sym|
              header.each do | k,v |
+                break if  src_data_headers[k].nil?
                 another_hash[v] = src_data_headers[k].to_s.gsub(/^\[\"/,"").gsub(/\"\]$/,"") unless src_data_headers[k].size == 0
-             end
+             end 
           end
        rescue => ex
            @logger.warn "Create Header WARN of key:#{@move_headers} masssage:#{ex.message}"
@@ -248,7 +249,6 @@ private
            acl =  :private
            #acl =  :public_read
            dst_data = put_object(src_obj.key,data,acl)
-           @logger.info "thread:#{thread_id} key: #{src_obj.key} "
            data = nil
            raise unless  check_put_object_result(src_obj,dst_data)
            @logger.info "thread:#{thread_id} key: #{src_obj.key} "
