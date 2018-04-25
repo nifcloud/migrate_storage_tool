@@ -2,6 +2,8 @@
 multiple:
    cpu_number: 1
    thread_number: 3
+memory:
+  gc_execution_interval: 100
 src:
    endpoint: jp-east-2.os.cloud.nifty.com
    bucketname:
