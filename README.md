@@ -20,8 +20,11 @@ S3互換API対応ストレージ間でのデータ移行用ツール
 ```
 
 ## 設定ファイル
-* config.ymlがあるので、それぞれ `cpu_number:` `thread_number:` `gc_execution_interval:`  `endpoint:` `bucketname:` `access_key:` `secret_key:` を設定してください。
+* config.ymlがあるので、それぞれ設定してください。
     - multiple: 多重数(デフォルトはcpu数が1、スレッド数が3)
+    - multipart: マルチマートアップロードを使用する際の条件
+        - gigabyte_size_to_be_mpu: このサイズ以上のファイルであればマルチパートアップロードする(GB)
+        - part_megabyte_size: partあたりのサイズ(MB)
     - memory: メモリ管理(デフォルトのガベージコレクション実行頻度は100)
     - src: 移行元情報 
     - dst: 移行先情報

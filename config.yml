@@ -1,14 +1,17 @@
 ---
 multiple:
    cpu_number: 1
-   thread_number: 3
+   thread_number: 5
+multipart: 
+   gigabyte_size_to_be_mpu: 1
+   part_megabyte_size: 50
 memory:
   gc_execution_interval: 100
 src:
    endpoint: ncss.nifty.com
    bucketname: 
    access_key: 
-   secret_key: 
+   secret_key:  
    headers:
       - cache-control: :cache_control
       - content-type: :content_type
@@ -16,4 +19,4 @@ dst:
    endpoint: jp-east-2.os.cloud.nifty.com
    bucketname: 
    access_key: 
-   secret_key: 
+   secret_key:  
