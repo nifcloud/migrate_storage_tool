@@ -34,14 +34,16 @@ class MigrateStorage
         @cpu_numbers = config["multiple"]["cpu_number"]
         @thread_numbers = config["multiple"]["thread_number"]
         @gc_execution_interval = config["memory"]["gc_execution_interval"]
+        @size_to_be_mpu = config["multipart"]["gigabyte_size_to_be_mpu"] * 1024 * 1024 * 1024
+        @part_size = config["multipart"]["part_megabyte_size"] * 1024 * 1024
 
     end
    
     def migrage
-        @logger.info "Gettign list start"
+        @logger.info "Getting list start"
         object_list = create_obj_list
         @logger.info " Object list size:#{object_list.size}"
-        @logger.info "Gettign list finished"
+        @logger.info "Getting list finished"
         @logger.info "Migrate data start"
         parallel_process_migrate(object_list.shuffle!, @cpu_numbers)
         @logger.info "Migrate data finished"
@@ -51,7 +53,7 @@ class MigrateStorage
     def migrate_from_file(file)
         thread_id =  create_thread_id 7
         object_list = Array.new
-        @logger.info "Gettign list from file start"
+        @logger.info "Getting list from file start"
         File.foreach(file) do |line|
            src = eval(line)
            src_obj = AWS::Core::Data.new({
@@ -62,7 +64,7 @@ class MigrateStorage
            object_list.push src_obj
         end
         @logger.info " Object list size:#{object_list.size}"
-        @logger.info "Gettign list finished"
+        @logger.info "Getting list finished"
         @logger.info "Migrate data start"
         parallel_thread_migrate(object_list , thread_id , @thread_numbers)
         @logger.info "Migrate data finished"
@@ -114,26 +116,27 @@ private
     end
     
     def get_src_acl(key)
-        ret_cnt = 0
-        begin
-           acl = @src_client.get_object_acl( 
-             :bucket_name => @src_bucket_name,
-             :key => key
-           )
-        rescue Timeout::Error => ex
-           @logger.warn "Get Error acl of key:#{key} masssage:#{ex.message}"
-           @logger.warn ex
-           ret_cnt += 1
-           sleep @sleep_time
-           retry if ret_cnt < @retry_max 
-        rescue => ex
-           @logger.warn "Get Error acl of key:#{key} masssage:#{ex.message}"
-           @logger.warn ex
-           ret_cnt += 1
-           sleep @sleep_time
-           retry if ret_cnt < @retry_max 
-        end
-        acl
+        #ret_cnt = 0
+        #begin
+        #   acl = @src_client.get_object_acl( 
+        #     :bucket_name => @src_bucket_name,
+        #     :key => key
+        #   )
+        #rescue Timeout::Error => ex
+        #   @logger.warn "Get Error acl of key:#{key} masssage:#{ex.message}"
+        #   @logger.warn ex
+        #   ret_cnt += 1
+        #   sleep @sleep_time
+        #   retry if ret_cnt < @retry_max 
+        #rescue => ex
+        #   @logger.warn "Get Error acl of key:#{key} masssage:#{ex.message}"
+        #   @logger.warn ex
+        #   ret_cnt += 1
+        #   sleep @sleep_time
+        #   retry if ret_cnt < @retry_max 
+        #end
+        #return acl
+        return :private
     end
     
     def put_object(key,data,acl)
@@ -142,7 +145,7 @@ private
            put_param = create_put_param(key,data,acl)
            obj = @dst_client.put_object(put_param )
         rescue => ex
-           @logger.warn "Get Error key:#{key} masssage:#{ex.message}"
+           @logger.warn "Put Error key:#{key} masssage:#{ex.message}"
            @logger.warn ex
            ret_cnt += 1
            sleep @sleep_time
@@ -150,12 +153,70 @@ private
         end
         obj
     end
+    
+    def put_object_by_multipart(key, data, acl)
+        return data if key.end_with?("/")
+        begin
+           upload_id = ""
+           current_part = 1
+           total_parts = Array.new
+           parts = Array.new
+           init_param = create_init_mpu_param(key,data,acl)
+           res = @dst_client.initiate_multipart_upload(init_param)
+           upload_id = res.upload_id
+           iodata = StringIO.new(data[:data])
+           while io = iodata.read(@part_size) 
+              total_parts.push(io)
+           end
+           total_parts.each do |part|
+              upload_param= create_upload_mpu_param(key,part,upload_id, current_part)
+              uploadres = @dst_client.upload_part(upload_param)
+              part = {:part_number => current_part ,:etag => uploadres.etag}
+              parts.push part
+              current_part = current_part + 1
+           end
+           complete_param = create_complate_mpu_param(key,upload_id,parts)
+           res = @dst_client.complete_multipart_upload(complete_param)
+        rescue => ex
+           @logger.warn "MultiPartUpload Error key:#{key} masssage:#{ex.message}"
+           @logger.warn ex
+           @dst_client.abort_multipart_upload(create_abort_mpu_param(key,upload_id)) unless upload_id.empty? 
+           ret_cnt += 1
+           sleep @sleep_time
+           if ret_cnt < @retry_max
+              retry
+           else
+              @logger.error "MultiPartUpload Error retry over  key:#{key} masssage:#{ex.message}"
+              return res
+           end
+        end
+        res
+    end
 
     def create_put_param(key,data,acl)
        param = {:bucket_name => @dst_bucket_name, :key => key, :acl => acl,:data => data.http_response.body}
        meta_hash = create_add_params(data.http_response.headers)
        param.merge! meta_hash
        param
+    end
+    
+    def create_init_mpu_param(key,data,acl)
+       param = {:bucket_name => @dst_bucket_name, :key => key, :acl => acl}
+       meta_hash = create_add_params(data.http_response.headers)
+       param.merge! meta_hash
+       param
+    end
+    
+    def create_upload_mpu_param(key,data,upload_id,partnumber)
+       {:bucket_name => @dst_bucket_name, :key => key, :upload_id => upload_id , :data => data, :part_number => partnumber}
+    end
+    
+    def create_complate_mpu_param(key,upload_id,parts)
+       {:bucket_name => @dst_bucket_name, :key => key, :upload_id => upload_id , :parts => parts}
+    end
+
+    def create_abort_mpu_param(key,upload_id)
+       {:bucket_name => @dst_bucket_name, :key => key, :upload_id => upload_id }
     end
 
     def create_add_params(src_data_headers)
@@ -241,24 +302,23 @@ private
     end
 
     def put_to_dst_storage(src_obj,thread_id)
-       ret_cnt =  0
-       begin 
-           data = get_object(src_obj.key)
-           
-           #acl =  get_src_acl(src_obj.key)
-           acl =  :private
-           #acl =  :public_read
-           dst_data = put_object(src_obj.key,data,acl)
-           data = nil
-           raise unless  check_put_object_result(src_obj,dst_data)
-           @logger.info "thread:#{thread_id} key: #{src_obj.key} "
-       rescue
-           ret_cnt += 1
-           sleep @sleep_time
-           retry if ret_cnt < @retry_max 
-       end
+       data = get_object(src_obj.key)
+       acl =  get_src_acl(src_obj.key)
+       
+       if must_mpu?(src_obj)
+          dst_data = put_object_by_multipart(src_obj.key,data,acl)
+       else
+          dst_data = put_object(src_obj.key,data,acl)
+          raise unless  check_put_object_result(src_obj,dst_data)
+       end 
+       @logger.info "thread:#{thread_id} key: #{src_obj.key} "
        dst_data
     end
+
+    def must_mpu?(src_obj)
+       src_obj.size.to_i > @size_to_be_mpu 
+    end
+
 
     def check_put_object_result(src_obj,dst_obj)
        begin 
